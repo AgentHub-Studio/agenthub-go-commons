@@ -55,9 +55,13 @@ func (c *Consumer) Consume(ctx context.Context, queue string, prefetch int, hand
 			}
 			if err := handler(ctx, d.Body); err != nil {
 				slog.Error("rabbitmq: handler error, nacking", "err", err)
-				d.Nack(false, false)
+				if err := d.Nack(false, false); err != nil {
+					slog.Error("rabbitmq: nack failed", "err", err)
+				}
 			} else {
-				d.Ack(false)
+				if err := d.Ack(false); err != nil {
+					slog.Error("rabbitmq: ack failed", "err", err)
+				}
 			}
 		}
 	}

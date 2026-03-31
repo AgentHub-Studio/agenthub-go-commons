@@ -20,7 +20,7 @@ type Page[T any] struct {
 	Content          []T   `json:"content"`
 	TotalElements    int64 `json:"totalElements"`
 	TotalPages       int   `json:"totalPages"`
-	Number           int   `json:"number"`           // current page (0-based)
+	Number           int   `json:"number"` // current page (0-based)
 	Size             int   `json:"size"`
 	NumberOfElements int   `json:"numberOfElements"` // elements in this page
 	First            bool  `json:"first"`

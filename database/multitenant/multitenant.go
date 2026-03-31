@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/AgentHub-Studio/agenthub-go-commons/database/migrate"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/AgentHub-Studio/agenthub-go-commons/database/migrate"
 )
 
 // MigrateAllTenants queries public.tenants for all ACTIVE tenants and applies

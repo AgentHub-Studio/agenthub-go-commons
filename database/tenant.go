@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/AgentHub-Studio/agenthub-go-commons/tenant"
 	"github.com/jackc/pgx/v5/pgxpool"
+
+	"github.com/AgentHub-Studio/agenthub-go-commons/tenant"
 )
 
 // AcquireWithTenant acquires a connection from the pool and executes

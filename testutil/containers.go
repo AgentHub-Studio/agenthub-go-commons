@@ -18,10 +18,10 @@ func NewPostgresContainer(t *testing.T) *pgxpool.Pool {
 	ctx := context.Background()
 
 	const (
-		dbName   = "testdb"
-		dbUser   = "testuser"
-		dbPass   = "testpass"
-		dbPort   = "5432/tcp"
+		dbName = "testdb"
+		dbUser = "testuser"
+		dbPass = "testpass"
+		dbPort = "5432/tcp"
 	)
 
 	req := testcontainers.ContainerRequest{

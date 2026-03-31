@@ -4,8 +4,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/AgentHub-Studio/agenthub-go-commons/pagination"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/AgentHub-Studio/agenthub-go-commons/pagination"
 )
 
 func TestFromRequest(t *testing.T) {

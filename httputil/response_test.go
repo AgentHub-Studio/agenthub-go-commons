@@ -7,9 +7,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/AgentHub-Studio/agenthub-go-commons/httputil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/AgentHub-Studio/agenthub-go-commons/httputil"
 )
 
 func TestJSON(t *testing.T) {

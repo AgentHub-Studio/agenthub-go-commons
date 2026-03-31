@@ -11,11 +11,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/AgentHub-Studio/agenthub-go-commons/auth"
-	. "github.com/AgentHub-Studio/agenthub-go-commons/tenant"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/AgentHub-Studio/agenthub-go-commons/auth"
+	. "github.com/AgentHub-Studio/agenthub-go-commons/tenant"
 )
 
 // tenantTestKeyPair holds an RSA key pair for tests.

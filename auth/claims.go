@@ -38,3 +38,24 @@ func ClaimsFromContext(ctx context.Context) *Claims {
 func contextWithClaims(ctx context.Context, c *Claims) context.Context {
 	return context.WithValue(ctx, claimsKey, c)
 }
+
+// HasRole reports whether the Claims contain the given role in either
+// realm_access.roles or any resource_access.*.roles entry.
+func (c *Claims) HasRole(role string) bool {
+	if c == nil {
+		return false
+	}
+	for _, r := range c.RealmAccess.Roles {
+		if r == role {
+			return true
+		}
+	}
+	for _, cr := range c.ResourceAccess {
+		for _, r := range cr.Roles {
+			if r == role {
+				return true
+			}
+		}
+	}
+	return false
+}

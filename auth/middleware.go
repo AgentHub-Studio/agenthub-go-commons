@@ -38,6 +38,22 @@ func Middleware(cfg Config) func(http.Handler) http.Handler {
 	}
 }
 
+// RequireRole returns a middleware that allows only requests whose JWT contains
+// the specified role (checked in both realm_access and resource_access).
+// Must be placed after Middleware so that claims are present in context.
+func RequireRole(role string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			claims := ClaimsFromContext(r.Context())
+			if !claims.HasRole(role) {
+				http.Error(w, "forbidden: missing required role", http.StatusForbidden)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 func extractBearerToken(r *http.Request) (string, error) {
 	h := r.Header.Get("Authorization")
 	if h == "" {

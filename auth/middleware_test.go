@@ -262,6 +262,71 @@ func TestExtractTenantID(t *testing.T) {
 	}
 }
 
+func TestRequireRole_AllowsMatchingRole(t *testing.T) {
+	claims := &Claims{RealmAccess: RealmAccess{Roles: []string{"admin", "PROXY_SERVICE"}}}
+	ctx := contextWithClaims(httptest.NewRequest(http.MethodGet, "/", nil).Context(), claims)
+
+	called := false
+	handler := RequireRole("PROXY_SERVICE")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		called = true
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil).WithContext(ctx)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	assert.True(t, called)
+	assert.Equal(t, http.StatusOK, rec.Code)
+}
+
+func TestRequireRole_ForbidsMissingRole(t *testing.T) {
+	claims := &Claims{RealmAccess: RealmAccess{Roles: []string{"user"}}}
+	ctx := contextWithClaims(httptest.NewRequest(http.MethodGet, "/", nil).Context(), claims)
+
+	handler := RequireRole("PROXY_SERVICE")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil).WithContext(ctx)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+	assert.Contains(t, rec.Body.String(), "forbidden")
+}
+
+func TestRequireRole_ForbidsNilClaims(t *testing.T) {
+	handler := RequireRole("admin")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+}
+
+func TestHasRole_RealmAccess(t *testing.T) {
+	c := &Claims{RealmAccess: RealmAccess{Roles: []string{"admin", "user"}}}
+	assert.True(t, c.HasRole("admin"))
+	assert.False(t, c.HasRole("PROXY_SERVICE"))
+}
+
+func TestHasRole_ResourceAccess(t *testing.T) {
+	c := &Claims{ResourceAccess: map[string]ClientRoles{
+		"agenthub-frontend": {Roles: []string{"PROXY_SERVICE"}},
+	}}
+	assert.True(t, c.HasRole("PROXY_SERVICE"))
+	assert.False(t, c.HasRole("admin"))
+}
+
+func TestHasRole_NilClaims(t *testing.T) {
+	var c *Claims
+	assert.False(t, c.HasRole("admin"))
+}
+
 func TestClaimsFromContext_NilWhenNotSet(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	claims := ClaimsFromContext(req.Context())

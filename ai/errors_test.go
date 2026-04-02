@@ -32,9 +32,9 @@ func TestChatOptions_Merge_OverwritesNonZero(t *testing.T) {
 	override := ai.ChatOptions{MaxTokens: 1024, SystemMsg: "You are helpful."}
 
 	merged := base.Merge(override)
-	assert.Equal(t, "gpt-4o", merged.Model)       // kept from base
-	assert.Equal(t, 1024, merged.MaxTokens)        // overridden
-	assert.Equal(t, 0.7, merged.Temperature)       // kept from base
+	assert.Equal(t, "gpt-4o", merged.Model)               // kept from base
+	assert.Equal(t, 1024, merged.MaxTokens)               // overridden
+	assert.Equal(t, 0.7, merged.Temperature)              // kept from base
 	assert.Equal(t, "You are helpful.", merged.SystemMsg) // added from override
 }
 

@@ -78,7 +78,7 @@ type toolUseContent struct {
 
 // toolResultContent is the tool result block sent back by the caller.
 type toolResultContent struct {
-	Type      string `json:"type"`       // "tool_result"
+	Type      string `json:"type"` // "tool_result"
 	ToolUseID string `json:"tool_use_id"`
 	Content   string `json:"content"`
 }
@@ -210,7 +210,7 @@ func (p *Provider) ChatStream(ctx context.Context, messages []ai.Message, opts a
 	p.setHeaders(httpReq)
 	httpReq.Header.Set("Accept", "text/event-stream")
 
-	resp, err := p.client.Do(httpReq)
+	resp, err := p.client.Do(httpReq) //nolint:bodyclose // body is closed in the goroutine below
 	if err != nil {
 		return nil, fmt.Errorf("anthropic: do stream request: %w", err)
 	}

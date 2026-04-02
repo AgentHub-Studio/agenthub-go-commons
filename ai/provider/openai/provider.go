@@ -196,7 +196,7 @@ func (p *Provider) ChatStream(ctx context.Context, messages []ai.Message, opts a
 	p.setHeaders(httpReq)
 	httpReq.Header.Set("Accept", "text/event-stream")
 
-	resp, err := p.client.Do(httpReq)
+	resp, err := p.client.Do(httpReq) //nolint:bodyclose // body is closed in the goroutine below
 	if err != nil {
 		return nil, fmt.Errorf("openai: do stream request: %w", err)
 	}

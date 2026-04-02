@@ -159,7 +159,7 @@ func (p *Provider) ChatStream(ctx context.Context, messages []ai.Message, opts a
 	p.setHeaders(req)
 	req.Header.Set("Accept", "text/event-stream")
 
-	resp, err := p.client.Do(req)
+	resp, err := p.client.Do(req) //nolint:bodyclose // body is closed in the goroutine below
 	if err != nil {
 		return nil, fmt.Errorf("openrouter: stream request failed: %w", err)
 	}

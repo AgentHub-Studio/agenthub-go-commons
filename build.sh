@@ -26,9 +26,10 @@ case "$CMD" in
       -v "$(pwd)":/app \
       -v "${CACHE_VOL}":/go/pkg/mod \
       -v /var/run/docker.sock:/var/run/docker.sock \
+      -e CGO_ENABLED=1 \
       -w /app \
       "${GO_IMAGE}" \
-      go test -v -race -coverprofile=coverage.out ./... "$@"
+      sh -c "apk add --no-cache gcc musl-dev && go test -v -race -coverprofile=coverage.out ./... $*"
     echo "==> Tests OK"
     ;;
 

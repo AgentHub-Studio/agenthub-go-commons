@@ -116,5 +116,6 @@ type StreamChunk struct {
 	Delta         string    `json:"delta"`
 	ToolCallDelta *ToolCall `json:"toolCallDelta,omitempty"`
 	FinishReason  string    `json:"finishReason,omitempty"`
+	Usage         *Usage    `json:"usage,omitempty"`
 	Error         error     `json:"-"`
 }

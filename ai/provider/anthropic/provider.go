@@ -113,9 +113,14 @@ type anthropicUsage struct {
 // ---- stream event types ----
 
 type streamEventEnvelope struct {
-	Type  string          `json:"type"`
-	Index int             `json:"index"`
-	Delta *contentDelta   `json:"delta,omitempty"`
+	Type    string             `json:"type"`
+	Index   int                `json:"index"`
+	Delta   *contentDelta      `json:"delta,omitempty"`
+	Usage   *anthropicUsage    `json:"usage,omitempty"`
+	Message *streamMessageData `json:"message,omitempty"`
+}
+
+type streamMessageData struct {
 	Usage *anthropicUsage `json:"usage,omitempty"`
 }
 
@@ -262,8 +267,28 @@ func (p *Provider) ChatStream(ctx context.Context, messages []ai.Message, opts a
 				ch <- chunk
 
 			case "message_delta":
+				chunk := ai.StreamChunk{}
 				if env.Delta != nil && env.Delta.StopReason != "" {
-					ch <- ai.StreamChunk{FinishReason: mapStopReason(env.Delta.StopReason)}
+					chunk.FinishReason = mapStopReason(env.Delta.StopReason)
+				}
+				if env.Usage != nil {
+					chunk.Usage = &ai.Usage{
+						PromptTokens:     env.Usage.InputTokens,
+						CompletionTokens: env.Usage.OutputTokens,
+						TotalTokens:      env.Usage.InputTokens + env.Usage.OutputTokens,
+					}
+				}
+				ch <- chunk
+
+			case "message_start":
+				// message_start carries input token count in message.usage.
+				if env.Message != nil && env.Message.Usage != nil {
+					ch <- ai.StreamChunk{
+						Usage: &ai.Usage{
+							PromptTokens: env.Message.Usage.InputTokens,
+							TotalTokens:  env.Message.Usage.InputTokens,
+						},
+					}
 				}
 
 			case "message_stop":

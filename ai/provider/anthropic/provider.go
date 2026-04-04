@@ -48,12 +48,12 @@ func (p *Provider) GetProviderName() string { return "anthropic" }
 // ---- internal request / response types ----
 
 type messagesRequest struct {
-	Model     string    `json:"model"`
-	MaxTokens int       `json:"max_tokens"`
-	System    string    `json:"system,omitempty"`
-	Messages  []message `json:"messages"`
-	Tools     []tool    `json:"tools,omitempty"`
-	Stream    bool      `json:"stream,omitempty"`
+	Model     string          `json:"model"`
+	MaxTokens int             `json:"max_tokens"`
+	System    json.RawMessage `json:"system,omitempty"`
+	Messages  []message       `json:"messages"`
+	Tools     []tool          `json:"tools,omitempty"`
+	Stream    bool            `json:"stream,omitempty"`
 }
 
 // message represents an Anthropic message, supporting both text and tool-result content.
@@ -87,6 +87,29 @@ type tool struct {
 	Name        string         `json:"name"`
 	Description string         `json:"description"`
 	InputSchema map[string]any `json:"input_schema"`
+}
+
+// cachedTextBlock is a system prompt content block with optional cache_control.
+type cachedTextBlock struct {
+	Type         string                 `json:"type"` // "text"
+	Text         string                 `json:"text"`
+	CacheControl map[string]string      `json:"cache_control,omitempty"`
+}
+
+// buildCachedSystemBlocks splits a system prompt into content blocks with
+// cache_control markers for Anthropic's prompt caching. The last block gets
+// the ephemeral cache marker, maximising cache hits across turns where the
+// static prefix remains unchanged. Inspired by Claude Code's system prompt caching.
+func buildCachedSystemBlocks(systemMsg string) json.RawMessage {
+	blocks := []cachedTextBlock{
+		{
+			Type:         "text",
+			Text:         systemMsg,
+			CacheControl: map[string]string{"type": "ephemeral"},
+		},
+	}
+	data, _ := json.Marshal(blocks)
+	return data
 }
 
 type messagesResponse struct {
@@ -315,16 +338,27 @@ func (p *Provider) buildRequest(messages []ai.Message, opts ai.ChatOptions, stre
 	req := &messagesRequest{
 		Model:     opts.Model,
 		MaxTokens: maxTokens,
-		System:    opts.SystemMsg,
 		Stream:    stream,
+	}
+
+	// Build system field — either a plain string or an array with cache_control.
+	systemMsg := opts.SystemMsg
+	for _, m := range messages {
+		if m.Role == ai.RoleSystem && systemMsg == "" {
+			systemMsg = m.Content
+		}
+	}
+	if systemMsg != "" {
+		if opts.CacheControl {
+			req.System = buildCachedSystemBlocks(systemMsg)
+		} else {
+			req.System, _ = json.Marshal(systemMsg)
+		}
 	}
 
 	for _, m := range messages {
 		// Skip system messages — they go in the top-level system field.
 		if m.Role == ai.RoleSystem {
-			if req.System == "" {
-				req.System = m.Content
-			}
 			continue
 		}
 

@@ -202,7 +202,7 @@ func (p *Provider) ChatStream(ctx context.Context, messages []ai.Message, opts a
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		resp.Body.Close()
+		defer resp.Body.Close()
 		return nil, p.parseError(resp)
 	}
 

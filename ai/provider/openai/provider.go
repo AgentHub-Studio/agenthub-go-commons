@@ -34,8 +34,19 @@ func New(apiKey, baseURL string) *Provider {
 	return &Provider{
 		apiKey:  apiKey,
 		baseURL: strings.TrimRight(baseURL, "/"),
-		client:  &http.Client{Timeout: 120 * time.Second},
+		client: &http.Client{
+			Transport: &http.Transport{
+				ResponseHeaderTimeout: 600 * time.Second,
+			},
+		},
 	}
+}
+
+// WithTransport replaces the HTTP transport used by the provider.
+// This is useful for injecting custom headers or middleware (e.g. for OpenRouter).
+func (p *Provider) WithTransport(t http.RoundTripper) *Provider {
+	p.client = &http.Client{Transport: t}
+	return p
 }
 
 // GetProviderName returns "openai".

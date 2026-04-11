@@ -25,6 +25,10 @@ var (
 
 	// ErrContentFiltered is returned when the response was blocked by content filters.
 	ErrContentFiltered = errors.New("ai: content filtered")
+
+	// ErrInvalidResponseID is returned when the previous_response_id is invalid or expired.
+	// The caller should clear the response chain and retry with full conversation history.
+	ErrInvalidResponseID = errors.New("ai: previous response ID is invalid or expired")
 )
 
 // APIError wraps a provider API error with its HTTP status code and underlying sentinel error.

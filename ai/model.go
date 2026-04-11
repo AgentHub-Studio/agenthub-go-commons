@@ -112,6 +112,11 @@ type ChatOptions struct {
 	// is emitted. Useful for structured query flows that need early termination.
 	// Inspired by Claude Code's sideQuery.ts stop_sequences parameter.
 	StopSequences []string `json:"stopSequences,omitempty"`
+	// PreviousResponseID enables response chaining for providers that support it
+	// (e.g. OpenAI Responses API). When set, the provider sends only the new
+	// input items and lets the server reconstruct the full conversation from the
+	// chained response. This dramatically reduces input tokens on long conversations.
+	PreviousResponseID string `json:"previousResponseId,omitempty"`
 }
 
 // ToolChoiceType identifies how the model should use tools.
@@ -151,6 +156,10 @@ type ChatResponse struct {
 	Model        string     `json:"model"`
 	// ThinkingContent holds the model's chain-of-thought reasoning (if thinking was enabled).
 	ThinkingContent string `json:"thinkingContent,omitempty"`
+	// ResponseID is the provider's opaque response identifier. When the provider
+	// supports response chaining (e.g. OpenAI Responses API), this ID can be
+	// passed as PreviousResponseID on the next call to avoid resending full history.
+	ResponseID string `json:"responseId,omitempty"`
 }
 
 // Usage holds token usage statistics.
@@ -198,6 +207,9 @@ func (o ChatOptions) Merge(other ChatOptions) ChatOptions {
 	if len(other.StopSequences) > 0 {
 		o.StopSequences = other.StopSequences
 	}
+	if other.PreviousResponseID != "" {
+		o.PreviousResponseID = other.PreviousResponseID
+	}
 	return o
 }
 
@@ -222,4 +234,6 @@ type StreamChunk struct {
 	Error         error     `json:"-"`
 	// ThinkingDelta holds incremental thinking content (when extended thinking is enabled).
 	ThinkingDelta string `json:"thinkingDelta,omitempty"`
+	// ResponseID is set on the final chunk when the provider supports response chaining.
+	ResponseID string `json:"responseId,omitempty"`
 }

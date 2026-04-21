@@ -25,28 +25,33 @@ type Provider struct {
 	client  *http.Client
 }
 
+// defaultTimeout is the per-request timeout applied by New. It caps the
+// wait for response *headers*; callers needing different behaviour (e.g.
+// Ollama on CPU) should use NewWithTimeout.
+const defaultTimeout = 120 * time.Second
+
 // New creates a new OpenAI Provider.
 // If baseURL is empty, the default OpenAI API URL is used.
 func New(apiKey, baseURL string) *Provider {
+	return NewWithTimeout(apiKey, baseURL, defaultTimeout)
+}
+
+// NewWithTimeout is like New but lets the caller override the per-request
+// timeout. Local-CPU deployments of Ollama serving large models (gpt-oss:20b
+// and up) routinely need several minutes for the first token, so the Ollama
+// provider wraps this constructor with a generous default.
+func NewWithTimeout(apiKey, baseURL string, timeout time.Duration) *Provider {
 	if baseURL == "" {
 		baseURL = defaultBaseURL
+	}
+	if timeout <= 0 {
+		timeout = defaultTimeout
 	}
 	return &Provider{
 		apiKey:  apiKey,
 		baseURL: strings.TrimRight(baseURL, "/"),
-		client: &http.Client{
-			Transport: &http.Transport{
-				ResponseHeaderTimeout: 600 * time.Second,
-			},
-		},
+		client:  &http.Client{Timeout: timeout},
 	}
-}
-
-// WithTransport replaces the HTTP transport used by the provider.
-// This is useful for injecting custom headers or middleware (e.g. for OpenRouter).
-func (p *Provider) WithTransport(t http.RoundTripper) *Provider {
-	p.client = &http.Client{Transport: t}
-	return p
 }
 
 // GetProviderName returns "openai".
@@ -62,6 +67,11 @@ type chatRequest struct {
 	TopP        float64   `json:"top_p,omitempty"`
 	Tools       []tool    `json:"tools,omitempty"`
 	Stream      bool      `json:"stream,omitempty"`
+	// Options is an opaque passthrough reserved for OpenAI-compatible backends
+	// that accept extra parameters. Ollama uses this to receive `num_ctx`,
+	// `num_predict`, `seed`, etc. OpenAI itself ignores the field (omitempty
+	// protects strict validators from choking on an empty object).
+	Options map[string]any `json:"options,omitempty"`
 }
 
 type message struct {
@@ -328,6 +338,7 @@ func (p *Provider) buildRequest(messages []ai.Message, opts ai.ChatOptions, stre
 		TopP:        opts.TopP,
 		Tools:       tools,
 		Stream:      stream,
+		Options:     opts.ProviderOptions,
 	}
 }
 

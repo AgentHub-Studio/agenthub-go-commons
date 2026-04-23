@@ -3,6 +3,7 @@ package testutil
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -81,8 +82,12 @@ func MustExec(t *testing.T, pool *pgxpool.Pool, sql string, args ...any) {
 }
 
 // CreateTenantSchema creates the ah_{tenantID} schema for testing.
+// The schema name is double-quoted so hyphenated tenant IDs (e.g. "test-tenant")
+// don't break the CREATE SCHEMA parser. Any literal double quote in the tenant
+// ID is doubled per SQL identifier escaping.
 func CreateTenantSchema(t *testing.T, pool *pgxpool.Pool, tenantID string) {
 	t.Helper()
 	schema := fmt.Sprintf("ah_%s", tenantID)
-	MustExec(t, pool, fmt.Sprintf("CREATE SCHEMA IF NOT EXISTS %s", schema))
+	escaped := strings.ReplaceAll(schema, `"`, `""`)
+	MustExec(t, pool, fmt.Sprintf(`CREATE SCHEMA IF NOT EXISTS "%s"`, escaped))
 }

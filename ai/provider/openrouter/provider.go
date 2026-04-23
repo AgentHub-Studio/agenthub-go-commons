@@ -5,6 +5,7 @@ package openrouter
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -40,13 +41,21 @@ func (p *Provider) GetProviderName() string { return "openrouter" }
 
 // Chat sends a non-streaming chat request via the OpenAI-compatible OpenRouter API.
 func (p *Provider) Chat(ctx context.Context, messages []ai.Message, opts ai.ChatOptions) (*ai.ChatResponse, error) {
-	return p.inner.Chat(ctx, messages, opts)
+	resp, err := p.inner.Chat(ctx, messages, opts)
+	if err != nil {
+		return nil, fmt.Errorf("openrouter: %w", err)
+	}
+	return resp, nil
 }
 
 // ChatStream sends a streaming chat request via the OpenAI-compatible OpenRouter API.
 // Tool calls are correctly forwarded via the wrapped OpenAI provider (P-C319-2).
 func (p *Provider) ChatStream(ctx context.Context, messages []ai.Message, opts ai.ChatOptions) (<-chan ai.StreamChunk, error) {
-	return p.inner.ChatStream(ctx, messages, opts)
+	ch, err := p.inner.ChatStream(ctx, messages, opts)
+	if err != nil {
+		return nil, fmt.Errorf("openrouter: %w", err)
+	}
+	return ch, nil
 }
 
 // orTransport is an http.RoundTripper that adds OpenRouter-specific headers.

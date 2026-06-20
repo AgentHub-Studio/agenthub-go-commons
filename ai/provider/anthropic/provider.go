@@ -91,9 +91,9 @@ type tool struct {
 
 // cachedTextBlock is a system prompt content block with optional cache_control.
 type cachedTextBlock struct {
-	Type         string                 `json:"type"` // "text"
-	Text         string                 `json:"text"`
-	CacheControl map[string]string      `json:"cache_control,omitempty"`
+	Type         string            `json:"type"` // "text"
+	Text         string            `json:"text"`
+	CacheControl map[string]string `json:"cache_control,omitempty"`
 }
 
 // buildCachedSystemBlocks splits a system prompt into content blocks with
@@ -129,8 +129,10 @@ type contentBlock struct {
 }
 
 type anthropicUsage struct {
-	InputTokens  int `json:"input_tokens"`
-	OutputTokens int `json:"output_tokens"`
+	InputTokens              int `json:"input_tokens"`
+	OutputTokens             int `json:"output_tokens"`
+	CacheCreationInputTokens int `json:"cache_creation_input_tokens"`
+	CacheReadInputTokens     int `json:"cache_read_input_tokens"`
 }
 
 // ---- stream event types ----
@@ -296,9 +298,11 @@ func (p *Provider) ChatStream(ctx context.Context, messages []ai.Message, opts a
 				}
 				if env.Usage != nil {
 					chunk.Usage = &ai.Usage{
-						PromptTokens:     env.Usage.InputTokens,
-						CompletionTokens: env.Usage.OutputTokens,
-						TotalTokens:      env.Usage.InputTokens + env.Usage.OutputTokens,
+						PromptTokens:        env.Usage.InputTokens,
+						CompletionTokens:    env.Usage.OutputTokens,
+						TotalTokens:         env.Usage.InputTokens + env.Usage.OutputTokens,
+						CacheReadTokens:     env.Usage.CacheReadInputTokens,
+						CacheCreationTokens: env.Usage.CacheCreationInputTokens,
 					}
 				}
 				ch <- chunk
@@ -308,8 +312,10 @@ func (p *Provider) ChatStream(ctx context.Context, messages []ai.Message, opts a
 				if env.Message != nil && env.Message.Usage != nil {
 					ch <- ai.StreamChunk{
 						Usage: &ai.Usage{
-							PromptTokens: env.Message.Usage.InputTokens,
-							TotalTokens:  env.Message.Usage.InputTokens,
+							PromptTokens:        env.Message.Usage.InputTokens,
+							TotalTokens:         env.Message.Usage.InputTokens,
+							CacheReadTokens:     env.Message.Usage.CacheReadInputTokens,
+							CacheCreationTokens: env.Message.Usage.CacheCreationInputTokens,
 						},
 					}
 				}
@@ -434,9 +440,11 @@ func (p *Provider) convertResponse(r *messagesResponse) *ai.ChatResponse {
 		Model:        r.Model,
 		FinishReason: mapStopReason(r.StopReason),
 		Usage: ai.Usage{
-			PromptTokens:     r.Usage.InputTokens,
-			CompletionTokens: r.Usage.OutputTokens,
-			TotalTokens:      r.Usage.InputTokens + r.Usage.OutputTokens,
+			PromptTokens:        r.Usage.InputTokens,
+			CompletionTokens:    r.Usage.OutputTokens,
+			TotalTokens:         r.Usage.InputTokens + r.Usage.OutputTokens,
+			CacheReadTokens:     r.Usage.CacheReadInputTokens,
+			CacheCreationTokens: r.Usage.CacheCreationInputTokens,
 		},
 	}
 

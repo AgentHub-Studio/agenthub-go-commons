@@ -34,7 +34,10 @@ func TestAnthropicProvider_Chat_Success(t *testing.T) {
 			"content": []map[string]any{
 				{"type": "text", "text": "Hello from Anthropic!"},
 			},
-			"usage": map[string]any{"input_tokens": 10, "output_tokens": 6},
+			"usage": map[string]any{
+				"input_tokens": 10, "output_tokens": 6,
+				"cache_read_input_tokens": 7, "cache_creation_input_tokens": 3,
+			},
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(resp)
@@ -48,6 +51,8 @@ func TestAnthropicProvider_Chat_Success(t *testing.T) {
 	assert.Equal(t, "Hello from Anthropic!", res.Content)
 	assert.Equal(t, "stop", res.FinishReason) // Anthropic "end_turn" is mapped to "stop"
 	assert.Equal(t, 16, res.Usage.TotalTokens)
+	assert.Equal(t, 7, res.Usage.CacheReadTokens)
+	assert.Equal(t, 3, res.Usage.CacheCreationTokens)
 }
 
 func TestAnthropicProvider_Chat_APIError(t *testing.T) {

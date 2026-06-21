@@ -129,9 +129,14 @@ type choice struct {
 }
 
 type usage struct {
-	PromptTokens     int `json:"prompt_tokens"`
-	CompletionTokens int `json:"completion_tokens"`
-	TotalTokens      int `json:"total_tokens"`
+	PromptTokens        int                `json:"prompt_tokens"`
+	CompletionTokens    int                `json:"completion_tokens"`
+	TotalTokens         int                `json:"total_tokens"`
+	PromptTokensDetails promptTokenDetails `json:"prompt_tokens_details"`
+}
+
+type promptTokenDetails struct {
+	CachedTokens int `json:"cached_tokens"`
 }
 
 // streamChoice represents one choice in a streaming SSE delta event.
@@ -366,6 +371,7 @@ func (p *Provider) convertResponse(r *chatResponse) *ai.ChatResponse {
 			PromptTokens:     r.Usage.PromptTokens,
 			CompletionTokens: r.Usage.CompletionTokens,
 			TotalTokens:      r.Usage.TotalTokens,
+			CacheReadTokens:  r.Usage.PromptTokensDetails.CachedTokens,
 		},
 	}
 

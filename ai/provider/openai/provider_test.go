@@ -42,6 +42,7 @@ func TestOpenAIProvider_Chat_Success(t *testing.T) {
 			},
 			"usage": map[string]any{
 				"prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15,
+				"prompt_tokens_details": map[string]any{"cached_tokens": 8},
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -56,6 +57,7 @@ func TestOpenAIProvider_Chat_Success(t *testing.T) {
 	assert.Equal(t, "Hello, world!", res.Content)
 	assert.Equal(t, "stop", res.FinishReason)
 	assert.Equal(t, 15, res.Usage.TotalTokens)
+	assert.Equal(t, 8, res.Usage.CacheReadTokens)
 }
 
 func TestOpenAIProvider_Chat_APIError(t *testing.T) {

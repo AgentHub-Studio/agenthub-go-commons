@@ -17,7 +17,7 @@ import (
 // ErrNoChange is not treated as an error.
 func Up(ctx context.Context, pool *pgxpool.Pool, schema, migrationsPath string) error {
 	db := stdlib.OpenDBFromPool(pool)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	driver, err := postgres.WithInstance(db, &postgres.Config{
 		SchemaName:      schema,
@@ -31,7 +31,7 @@ func Up(ctx context.Context, pool *pgxpool.Pool, schema, migrationsPath string) 
 	if err != nil {
 		return fmt.Errorf("migrate: initialize for schema %q: %w", schema, err)
 	}
-	defer m.Close()
+	defer func() { _, _ = m.Close() }()
 
 	if err := m.Up(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return fmt.Errorf("migrate: up schema %q: %w", schema, err)
@@ -42,7 +42,7 @@ func Up(ctx context.Context, pool *pgxpool.Pool, schema, migrationsPath string) 
 // Down rolls back all migrations for the given schema.
 func Down(ctx context.Context, pool *pgxpool.Pool, schema, migrationsPath string) error {
 	db := stdlib.OpenDBFromPool(pool)
-	defer db.Close()
+	defer func() { _ = db.Close() }()
 
 	driver, err := postgres.WithInstance(db, &postgres.Config{
 		SchemaName:      schema,
@@ -56,7 +56,7 @@ func Down(ctx context.Context, pool *pgxpool.Pool, schema, migrationsPath string
 	if err != nil {
 		return fmt.Errorf("migrate: initialize for schema %q: %w", schema, err)
 	}
-	defer m.Close()
+	defer func() { _, _ = m.Close() }()
 
 	if err := m.Down(); err != nil && !errors.Is(err, migrate.ErrNoChange) {
 		return fmt.Errorf("migrate: down schema %q: %w", schema, err)

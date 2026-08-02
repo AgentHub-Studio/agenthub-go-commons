@@ -60,7 +60,7 @@ func extractBearerToken(r *http.Request) (string, error) {
 		return "", fmt.Errorf("missing Authorization header")
 	}
 	if !strings.HasPrefix(h, "Bearer ") {
-		return "", fmt.Errorf("Authorization header must start with Bearer")
+		return "", fmt.Errorf("authorization header must start with Bearer")
 	}
 	return strings.TrimPrefix(h, "Bearer "), nil
 }

@@ -36,7 +36,7 @@ func (p *Publisher) connect() error {
 	}
 	ch, err := conn.Channel()
 	if err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return fmt.Errorf("rabbitmq: open channel: %w", err)
 	}
 	p.conn = conn
@@ -79,9 +79,9 @@ func (p *Publisher) Close() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.ch != nil {
-		p.ch.Close()
+		_ = p.ch.Close()
 	}
 	if p.conn != nil {
-		p.conn.Close()
+		_ = p.conn.Close()
 	}
 }

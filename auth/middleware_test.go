@@ -47,7 +47,7 @@ func newJWKSServer(t *testing.T, kp *testKeyPair) *httptest.Server {
 		}
 		resp := jwksResponse{Keys: []jwk{key}}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 }
 
@@ -79,7 +79,7 @@ var handlerOK = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(claims.PreferredName))
+	_, _ = w.Write([]byte(claims.PreferredName))
 })
 
 func TestMiddleware_ValidToken(t *testing.T) {
@@ -94,7 +94,7 @@ func TestMiddleware_ValidToken(t *testing.T) {
 	cfg := Config{KeycloakBaseURL: jwksSrv.URL}
 	mw := Middleware(cfg)(handlerOK)
 
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 	req.Header.Set("Authorization", "Bearer "+tokenStr)
 	rec := httptest.NewRecorder()
 
@@ -108,7 +108,7 @@ func TestMiddleware_MissingAuthorizationHeader(t *testing.T) {
 	cfg := Config{KeycloakBaseURL: "http://keycloak.example.com"}
 	mw := Middleware(cfg)(handlerOK)
 
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
 
 	mw.ServeHTTP(rec, req)
@@ -121,7 +121,7 @@ func TestMiddleware_InvalidBearerFormat(t *testing.T) {
 	cfg := Config{KeycloakBaseURL: "http://keycloak.example.com"}
 	mw := Middleware(cfg)(handlerOK)
 
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 	req.Header.Set("Authorization", "Token sometoken")
 	rec := httptest.NewRecorder()
 
@@ -144,7 +144,7 @@ func TestMiddleware_ExpiredToken(t *testing.T) {
 	cfg := Config{KeycloakBaseURL: jwksSrv.URL}
 	mw := Middleware(cfg)(handlerOK)
 
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 	req.Header.Set("Authorization", "Bearer "+tokenStr)
 	rec := httptest.NewRecorder()
 
@@ -168,7 +168,7 @@ func TestMiddleware_TokenWithUnknownKid(t *testing.T) {
 	cfg := Config{KeycloakBaseURL: jwksSrv.URL}
 	mw := Middleware(cfg)(handlerOK)
 
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 	req.Header.Set("Authorization", "Bearer "+tokenStr)
 	rec := httptest.NewRecorder()
 
@@ -192,7 +192,7 @@ func TestMiddleware_AllowedIssuers_Accepted(t *testing.T) {
 	}
 	mw := Middleware(cfg)(handlerOK)
 
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 	req.Header.Set("Authorization", "Bearer "+tokenStr)
 	rec := httptest.NewRecorder()
 
@@ -216,7 +216,7 @@ func TestMiddleware_AllowedIssuers_Rejected(t *testing.T) {
 	}
 	mw := Middleware(cfg)(handlerOK)
 
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 	req.Header.Set("Authorization", "Bearer "+tokenStr)
 	rec := httptest.NewRecorder()
 
@@ -264,7 +264,7 @@ func TestExtractTenantID(t *testing.T) {
 
 func TestRequireRole_AllowsMatchingRole(t *testing.T) {
 	claims := &Claims{RealmAccess: RealmAccess{Roles: []string{"admin", "PROXY_SERVICE"}}}
-	ctx := contextWithClaims(httptest.NewRequest(http.MethodGet, "/", nil).Context(), claims)
+	ctx := contextWithClaims(t.Context(), claims)
 
 	called := false
 	handler := RequireRole("PROXY_SERVICE")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -272,7 +272,7 @@ func TestRequireRole_AllowsMatchingRole(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	req := httptest.NewRequest(http.MethodGet, "/", nil).WithContext(ctx)
+	req := httptest.NewRequestWithContext(ctx, http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, req)
 
@@ -282,13 +282,13 @@ func TestRequireRole_AllowsMatchingRole(t *testing.T) {
 
 func TestRequireRole_ForbidsMissingRole(t *testing.T) {
 	claims := &Claims{RealmAccess: RealmAccess{Roles: []string{"user"}}}
-	ctx := contextWithClaims(httptest.NewRequest(http.MethodGet, "/", nil).Context(), claims)
+	ctx := contextWithClaims(t.Context(), claims)
 
 	handler := RequireRole("PROXY_SERVICE")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	req := httptest.NewRequest(http.MethodGet, "/", nil).WithContext(ctx)
+	req := httptest.NewRequestWithContext(ctx, http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, req)
 
@@ -301,7 +301,7 @@ func TestRequireRole_ForbidsNilClaims(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
 	handler.ServeHTTP(rec, req)
 
@@ -328,14 +328,14 @@ func TestHasRole_NilClaims(t *testing.T) {
 }
 
 func TestClaimsFromContext_NilWhenNotSet(t *testing.T) {
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/", nil)
 	claims := ClaimsFromContext(req.Context())
 	assert.Nil(t, claims)
 }
 
 func TestClaimsFromContext_ReturnsStoredClaims(t *testing.T) {
 	expected := &Claims{PreferredName: "alice"}
-	ctx := contextWithClaims(httptest.NewRequest(http.MethodGet, "/", nil).Context(), expected)
+	ctx := contextWithClaims(t.Context(), expected)
 	got := ClaimsFromContext(ctx)
 	assert.Equal(t, expected, got)
 }
@@ -356,7 +356,7 @@ func TestJWKSCache_TTL(t *testing.T) {
 			N:   base64.RawURLEncoding.EncodeToString(nBytes),
 			E:   base64.RawURLEncoding.EncodeToString(eBytes),
 		}
-		json.NewEncoder(w).Encode(jwksResponse{Keys: []jwk{key}})
+		_ = json.NewEncoder(w).Encode(jwksResponse{Keys: []jwk{key}})
 	}))
 	defer srv.Close()
 

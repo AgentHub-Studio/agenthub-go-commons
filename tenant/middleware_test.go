@@ -59,7 +59,7 @@ func newTenantJWKSServer(t *testing.T, kp *tenantTestKeyPair) *httptest.Server {
 			E:   base64.RawURLEncoding.EncodeToString(eBytes),
 		}}}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(resp)
+		_ = json.NewEncoder(w).Encode(resp)
 	}))
 }
 

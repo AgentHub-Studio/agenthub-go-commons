@@ -118,13 +118,6 @@ type rError struct {
 	Message string `json:"message"`
 }
 
-// ---- Streaming event types ----
-
-type streamEvent struct {
-	Type    string          `json:"type"`
-	RawData json.RawMessage `json:"-"` // the full event data
-}
-
 type outputTextDelta struct {
 	ContentIndex int    `json:"content_index"`
 	Delta        string `json:"delta"`
@@ -165,7 +158,7 @@ func (p *Provider) Chat(ctx context.Context, messages []ai.Message, opts ai.Chat
 	if err != nil {
 		return nil, fmt.Errorf("openai-responses: do request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, p.parseHTTPError(resp)
@@ -201,7 +194,7 @@ func (p *Provider) ChatStream(ctx context.Context, messages []ai.Message, opts a
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		return nil, p.parseHTTPError(resp)
 	}
 
@@ -213,7 +206,7 @@ func (p *Provider) ChatStream(ctx context.Context, messages []ai.Message, opts a
 
 func (p *Provider) consumeStream(resp *http.Response, ch chan<- ai.StreamChunk) {
 	defer close(ch)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Track current function call being streamed.
 	var currentToolCallID string

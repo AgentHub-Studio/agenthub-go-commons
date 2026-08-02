@@ -183,7 +183,7 @@ func (p *Provider) Chat(ctx context.Context, messages []ai.Message, opts ai.Chat
 		}
 
 		if resp.StatusCode == http.StatusOK {
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 			var chatResp chatResponse
 			if err := json.NewDecoder(resp.Body).Decode(&chatResp); err != nil {
 				return nil, fmt.Errorf("openai: decode response: %w", err)
@@ -192,7 +192,7 @@ func (p *Provider) Chat(ctx context.Context, messages []ai.Message, opts ai.Chat
 		}
 
 		apiErr := p.parseError(resp)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 
 		if attempt < maxRetries {
 			var ae *ai.APIError
@@ -240,14 +240,14 @@ func (p *Provider) ChatStream(ctx context.Context, messages []ai.Message, opts a
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		return nil, p.parseError(resp)
 	}
 
 	ch := make(chan ai.StreamChunk, 32)
 	go func() {
 		defer close(ch)
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		scanner := bufio.NewScanner(resp.Body)
 		for scanner.Scan() {

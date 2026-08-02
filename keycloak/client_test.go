@@ -22,7 +22,7 @@ func newTestServer(t *testing.T, handler http.HandlerFunc) (*httptest.Server, ke
 		// Token endpoint
 		if r.Method == http.MethodPost && r.URL.Path == "/realms/master/protocol/openid-connect/token" {
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(map[string]string{"access_token": "test-token"})
+			_ = json.NewEncoder(w).Encode(map[string]string{"access_token": "test-token"})
 			return
 		}
 		handler(w, r)

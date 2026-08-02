@@ -33,7 +33,9 @@ type Provider struct {
 // apiKey is optional: local Ollama ignores it; Ollama Cloud
 // (https://ollama.com/v1) and other authenticated deployments require it
 // and the openai-compatible inner provider will inject
-//   Authorization: Bearer <apiKey>
+//
+//	Authorization: Bearer <apiKey>
+//
 // whenever apiKey is non-empty.
 // The per-request timeout defaults to 10 minutes, overridable via the
 // OLLAMA_TIMEOUT_SECONDS environment variable.
@@ -108,10 +110,10 @@ func withOllamaOptions(opts ai.ChatOptions) ai.ChatOptions {
 // restarting the pod — but cached results are a valid future optimisation.
 func collectEnvOptions() map[string]any {
 	intKeys := map[string]string{
-		"OLLAMA_NUM_CTX":        "num_ctx",
-		"OLLAMA_NUM_PREDICT":    "num_predict",
-		"OLLAMA_SEED":           "seed",
-		"OLLAMA_TOP_K":          "top_k",
+		"OLLAMA_NUM_CTX":     "num_ctx",
+		"OLLAMA_NUM_PREDICT": "num_predict",
+		"OLLAMA_SEED":        "seed",
+		"OLLAMA_TOP_K":       "top_k",
 	}
 	floatKeys := map[string]string{
 		"OLLAMA_REPEAT_PENALTY": "repeat_penalty",

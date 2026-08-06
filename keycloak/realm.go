@@ -23,7 +23,7 @@ func (c *AdminClient) CreateRealm(ctx context.Context, tenantID string) error {
 	if err != nil {
 		return fmt.Errorf("keycloak: create realm %q: %w", tenantID, err)
 	}
-	defer func() { _ = resp.Body.Close() }()
+	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusConflict {
 		return nil // already exists
@@ -51,7 +51,7 @@ func (c *AdminClient) CreateClient(ctx context.Context, tenantID string) error {
 	if err != nil {
 		return fmt.Errorf("keycloak: create client in realm %q: %w", tenantID, err)
 	}
-	defer func() { _ = resp.Body.Close() }()
+	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusConflict {
 		return nil
@@ -71,7 +71,9 @@ func (c *AdminClient) CreateRealmRoles(ctx context.Context, tenantID string, rol
 		if err != nil {
 			return fmt.Errorf("keycloak: create role %q in realm %q: %w", role, tenantID, err)
 		}
-		_ = resp.Body.Close()
+		if err := resp.Body.Close(); err != nil {
+			return fmt.Errorf("keycloak: close create role %q response: %w", role, err)
+		}
 		if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusConflict {
 			return fmt.Errorf("keycloak: create role %q status %d", role, resp.StatusCode)
 		}

@@ -2,7 +2,7 @@
 # Build script for agenthub-go-commons (ADR-006: builds via Docker)
 set -euo pipefail
 
-GO_IMAGE="golang:1.24-alpine"
+GO_IMAGE="golang:1.25.12-alpine"
 CACHE_VOL="$HOME/go/pkg/mod"
 
 CMD="${1:-help}"
@@ -29,7 +29,7 @@ case "$CMD" in
       -e CGO_ENABLED=1 \
       -w /app \
       "${GO_IMAGE}" \
-      sh -c "apk add --no-cache gcc musl-dev && go test -v -race -coverprofile=coverage.out ./... $*"
+      sh -c 'apk add --no-cache gcc musl-dev && go test -v -race -coverprofile=coverage.out ./... "$@"' sh "$@"
     echo "==> Tests OK"
     ;;
 

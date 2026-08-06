@@ -186,7 +186,7 @@ func (p *Provider) Chat(ctx context.Context, messages []ai.Message, opts ai.Chat
 		}
 
 		if resp.StatusCode == http.StatusOK {
-			defer func() { _ = resp.Body.Close() }()
+			defer resp.Body.Close()
 			var msgResp messagesResponse
 			if err := json.NewDecoder(resp.Body).Decode(&msgResp); err != nil {
 				return nil, fmt.Errorf("anthropic: decode response: %w", err)
@@ -195,7 +195,9 @@ func (p *Provider) Chat(ctx context.Context, messages []ai.Message, opts ai.Chat
 		}
 
 		apiErr := p.parseError(resp)
-		_ = resp.Body.Close()
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			apiErr = errors.Join(apiErr, fmt.Errorf("anthropic: close error response body: %w", closeErr))
+		}
 
 		if attempt < maxRetries {
 			var ae *ai.APIError
@@ -246,14 +248,17 @@ func (p *Provider) ChatStream(ctx context.Context, messages []ai.Message, opts a
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		_ = resp.Body.Close()
-		return nil, p.parseError(resp)
+		apiErr := p.parseError(resp)
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			apiErr = errors.Join(apiErr, fmt.Errorf("anthropic: close stream error response body: %w", closeErr))
+		}
+		return nil, apiErr
 	}
 
 	ch := make(chan ai.StreamChunk, 32)
 	go func() {
 		defer close(ch)
-		defer func() { _ = resp.Body.Close() }()
+		defer resp.Body.Close()
 
 		scanner := bufio.NewScanner(resp.Body)
 		for scanner.Scan() {

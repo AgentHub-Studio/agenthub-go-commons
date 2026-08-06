@@ -65,7 +65,9 @@ func (c *AdminClient) DeleteUser(ctx context.Context, tenantID, userID string) e
 	if err != nil {
 		return fmt.Errorf("keycloak: delete user: %w", err)
 	}
-	resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		return fmt.Errorf("keycloak: close delete user response: %w", err)
+	}
 	if resp.StatusCode != http.StatusNoContent {
 		return fmt.Errorf("keycloak: delete user status %d", resp.StatusCode)
 	}

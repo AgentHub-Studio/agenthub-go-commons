@@ -27,7 +27,9 @@ func NewConsumer(url string) (*Consumer, error) {
 	}
 	ch, err := conn.Channel()
 	if err != nil {
-		conn.Close()
+		if closeErr := conn.Close(); closeErr != nil {
+			return nil, fmt.Errorf("rabbitmq: consumer channel: %w; close connection: %v", err, closeErr)
+		}
 		return nil, fmt.Errorf("rabbitmq: consumer channel: %w", err)
 	}
 	return &Consumer{url: url, conn: conn, ch: ch}, nil
@@ -70,9 +72,13 @@ func (c *Consumer) Consume(ctx context.Context, queue string, prefetch int, hand
 // Close closes the consumer.
 func (c *Consumer) Close() {
 	if c.ch != nil {
-		c.ch.Close()
+		if err := c.ch.Close(); err != nil {
+			slog.Warn("rabbitmq: close consumer channel failed", "err", err)
+		}
 	}
 	if c.conn != nil {
-		c.conn.Close()
+		if err := c.conn.Close(); err != nil {
+			slog.Warn("rabbitmq: close consumer connection failed", "err", err)
+		}
 	}
 }

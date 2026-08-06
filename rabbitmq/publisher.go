@@ -36,7 +36,9 @@ func (p *Publisher) connect() error {
 	}
 	ch, err := conn.Channel()
 	if err != nil {
-		conn.Close()
+		if closeErr := conn.Close(); closeErr != nil {
+			return fmt.Errorf("rabbitmq: open channel: %w; close connection: %v", err, closeErr)
+		}
 		return fmt.Errorf("rabbitmq: open channel: %w", err)
 	}
 	p.conn = conn
@@ -79,9 +81,13 @@ func (p *Publisher) Close() {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.ch != nil {
-		p.ch.Close()
+		if err := p.ch.Close(); err != nil {
+			slog.Warn("rabbitmq: close publisher channel failed", "err", err)
+		}
 	}
 	if p.conn != nil {
-		p.conn.Close()
+		if err := p.conn.Close(); err != nil {
+			slog.Warn("rabbitmq: close publisher connection failed", "err", err)
+		}
 	}
 }

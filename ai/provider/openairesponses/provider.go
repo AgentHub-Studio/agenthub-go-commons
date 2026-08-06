@@ -428,11 +428,14 @@ func (p *Provider) buildRequest(messages []ai.Message, opts ai.ChatOptions, stre
 					})
 				}
 				for _, tc := range m.ToolCalls {
+					args := strings.TrimSpace(tc.Function.Arguments)
+					if args == "" {
+						args = "{}"
+					}
 					items = append(items, inputItem{
 						Type:   "function_call",
-						ID:     tc.ID,
 						Name:   tc.Function.Name,
-						Args:   tc.Function.Arguments,
+						Args:   args,
 						CallID: tc.ID,
 					})
 				}

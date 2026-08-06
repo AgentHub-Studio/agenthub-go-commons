@@ -71,7 +71,9 @@ func (c *AdminClient) CreateRealmRoles(ctx context.Context, tenantID string, rol
 		if err != nil {
 			return fmt.Errorf("keycloak: create role %q in realm %q: %w", role, tenantID, err)
 		}
-		resp.Body.Close()
+		if err := resp.Body.Close(); err != nil {
+			return fmt.Errorf("keycloak: close create role %q response: %w", role, err)
+		}
 		if resp.StatusCode != http.StatusCreated && resp.StatusCode != http.StatusConflict {
 			return fmt.Errorf("keycloak: create role %q status %d", role, resp.StatusCode)
 		}
